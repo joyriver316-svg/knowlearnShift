@@ -129,6 +129,28 @@
     color: var(--text-secondary);
 }
 
+.job-name-cell {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.success-count {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.fail-count {
+    color: var(--error-color);
+    font-weight: 600;
+}
+
+.no-data {
+    text-align: center;
+    padding: var(--spacing-xl) !important;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
 .file-name {
     font-weight: 500;
     color: var(--text-primary);

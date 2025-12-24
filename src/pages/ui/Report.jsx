@@ -1,86 +1,278 @@
-// Reusing Report styles from java/Report.css
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../java/Report.css';
+import '../java/Dashboard.css';
+import { getJobs } from '../../utils/jobStorage';
 
 function Report() {
+    const [jobs, setJobs] = useState([]);
+    const [selectedJob, setSelectedJob] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [activeTab, setActiveTab] = useState('screen');
+    const [activeTab, setActiveTab] = useState('nexacro_screen');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const convertedFiles = [
-        { id: 1, name: 'UserList.xfdl', status: 'success', components: 8, apis: 3 },
-        { id: 2, name: 'OrderForm.xfdl', status: 'success', components: 12, apis: 5 },
-        { id: 3, name: 'Dashboard.xfdl', status: 'success', components: 15, apis: 8 },
-        { id: 4, name: 'ProductGrid.xfdl', status: 'error', components: 0, apis: 0 },
-        { id: 5, name: 'LoginPage.xfdl', status: 'success', components: 6, apis: 2 },
-        { id: 6, name: 'CustomerForm.xfdl', status: 'success', components: 10, apis: 4 },
-        { id: 7, name: 'InvoiceList.xfdl', status: 'success', components: 9, apis: 6 },
-        { id: 8, name: 'ReportView.xfdl', status: 'success', components: 14, apis: 7 }
-    ];
+    useEffect(() => {
+        const loadedJobs = getJobs('ui');
+        setJobs(loadedJobs);
+    }, []);
 
     const tabs = [
-        { id: 'screen', label: '넥사크로 화면정보' },
-        { id: 'interface', label: '넥사크로 인터페이스정보' },
-        { id: 'overview', label: '화면개요' },
-        { id: 'mock', label: 'Mock 데이터' },
-        { id: 'api', label: 'API 명세' }
+        { id: 'nxfdl', label: 'NXFDL' },
+        { id: 'nxmls', label: 'NXMLs' },
+        { id: 'document', label: 'Document' },
+        { id: 'mock', label: 'Mock' },
+        { id: 'api', label: 'API' },
+        { id: 'screen', label: 'Screen' }
     ];
 
-    const getFileIcon = (filename) => {
-        if (filename.endsWith('.java')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 2C6.5 3.5 6.5 5 8 6.5C9.5 5 9.5 3.5 8 2Z" fill="#EA2D2E" />
-                    <path d="M8 9.5C6.5 11 6.5 12.5 8 14C9.5 12.5 9.5 11 8 9.5Z" fill="#0074BD" />
-                    <path d="M4 5.5C4 5.5 5.5 6 8 6C10.5 6 12 5.5 12 5.5C12 5.5 10.5 7 8 7C5.5 7 4 5.5 4 5.5Z" fill="#EA2D2E" />
-                    <path d="M4 9C4 9 5.5 9.5 8 9.5C10.5 9.5 12 9 12 9C12 9 10.5 10.5 8 10.5C5.5 10.5 4 9 4 9Z" fill="#0074BD" />
-                </svg>
-            );
-        } else if (filename.endsWith('.jsx') || filename.endsWith('.js')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="8" cy="8" r="6" fill="#61DAFB" opacity="0.2" />
-                    <ellipse cx="8" cy="8" rx="6" ry="2.5" stroke="#61DAFB" strokeWidth="0.8" fill="none" />
-                    <ellipse cx="8" cy="8" rx="2.5" ry="6" stroke="#61DAFB" strokeWidth="0.8" fill="none" />
-                    <ellipse cx="8" cy="8" rx="5.2" ry="4.3" stroke="#61DAFB" strokeWidth="0.8" fill="none" transform="rotate(60 8 8)" />
-                    <circle cx="8" cy="8" r="1.5" fill="#61DAFB" />
-                </svg>
-            );
-        } else if (filename.endsWith('.css')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 2L4 14L8 15L12 14L13 2H3Z" fill="#1572B6" />
-                    <path d="M8 3V14L11.5 13L12.3 3H8Z" fill="#33A9DC" />
-                    <path d="M8 6H10.5L10.7 4H8V6Z" fill="white" />
-                    <path d="M8 10H10L9.8 11.5L8 12V10Z" fill="white" />
-                    <path d="M8 6V4H5.5L5.7 6H8Z" fill="#EBEBEB" />
-                    <path d="M8 12V10H6L6.2 11.5L8 12Z" fill="#EBEBEB" />
-                </svg>
-            );
-        } else if (filename.endsWith('.xml') || filename.endsWith('.xfdl')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="2" width="12" height="12" rx="1" fill="#E44D26" opacity="0.1" />
-                    <path d="M4 4L5 5M5 5L6 4M5 5L4 6M5 5L6 6" stroke="#E44D26" strokeWidth="1" strokeLinecap="round" />
-                    <path d="M10 4L11 5M11 5L12 4M11 5L10 6M11 5L12 6" stroke="#E44D26" strokeWidth="1" strokeLinecap="round" />
-                    <path d="M6 8H10M7 10H9" stroke="#E44D26" strokeWidth="1" strokeLinecap="round" />
-                    <circle cx="8" cy="8" r="0.5" fill="#E44D26" />
-                </svg>
+    const sampleNexacroScreen = `<!-- NXFDL Source -->
+<FDL version="2.1">
+  <Form id="customerList" width="1280" height="720" titletext="Customer List">
+    <Layouts>
+      <Layout height="720" width="1280">
+        <Grid id="grd_customers" taborder="0" left="20" top="80" right="20" bottom="20" binddataset="ds_customers">
+          <Formats>
+            <Format id="default">
+              <Columns>
+                <Column size="80"/>
+                <Column size="150"/>
+                <Column size="200"/>
+              </Columns>
+              <Rows>
+                <Row size="24" band="head"/>
+                <Row size="24"/>
+              </Rows>
+              <Band id="head">
+                <Cell text="ID"/>
+                <Cell col="1" text="Name"/>
+                <Cell col="2" text="Email"/>
+              </Band>
+              <Band id="body">
+                <Cell text="bind:cust_id"/>
+                <Cell col="1" text="bind:cust_name"/>
+                <Cell col="2" text="bind:email"/>
+              </Band>
+            </Format>
+          </Formats>
+        </Grid>
+      </Layout>
+    </Layouts>
+  </Form>
+</FDL>`;
+
+    const sampleNexacroInterface = `<!-- NXMLs Interface Definition -->
+<Interfaces>
+    <Interface id="SVC_SEARCH_CUST" type="Http" url="/api/customers">
+        <Input>
+            <Dataset id="ds_cond" type="QueryString">
+                <Column id="keyword" type="STRING"/>
+                <Column id="page" type="INT"/>
+            </Dataset>
+        </Input>
+        <Output>
+            <Dataset id="ds_customers">
+                <Column id="cust_id" type="STRING"/>
+                <Column id="cust_name" type="STRING"/>
+                <Column id="email" type="STRING"/>
+                <Column id="phone" type="STRING"/>
+            </Dataset>
+        </Output>
+    </Interface>
+</Interfaces>`;
+
+    const sampleOverview = `[Screen Document]
+# Customer Management Screen
+
+## Overview
+This screen provides functionality to search, view, and manage customer information.
+
+## Main Features
+1. **Search**: Filter customers by name or ID.
+2. **List View**: Display customer details in a grid.
+3. **Export**: Support Excel export of the customer list.
+4. **CRUD**: Context menu support for Edit/Delete operations.
+
+## Navigation
+Menu > Sales > Customer Management`;
+
+    const sampleMock = `{
+    "ds_customers": [
+        { "cust_id": "CUST001", "cust_name": "John Doe", "email": "john@example.com", "phone": "010-1234-5678" },
+        { "cust_id": "CUST002", "cust_name": "Jane Smith", "email": "jane@example.com", "phone": "010-9876-5432" },
+        { "cust_id": "CUST003", "cust_name": "Alice Johnson", "email": "alice@company.com", "phone": "010-5555-7777" }
+    ]
+}`;
+
+    const sampleApiSpec = [
+        { method: 'GET', path: '/api/v1/customers', desc: 'Get Customer List', params: 'keyword, page, size' },
+        { method: 'POST', path: '/api/v1/customers', desc: 'Register Customer', params: 'CustomerDto' },
+        { method: 'PUT', path: '/api/v1/customers/{id}', desc: 'Update Customer', params: 'id, CustomerDto' },
+        { method: 'DELETE', path: '/api/v1/customers/{id}', desc: 'Delete Customer', params: 'id' }
+    ];
+
+    const sampleParserInfo = `{
+    "screen_metadata": {
+        "id": "customerList.xfdl",
+        "resolution": { "width": 1280, "height": 720 },
+        "component_count": {
+            "Grid": 1,
+            "Button": 4,
+            "Static": 8,
+            "Div": 2
+        }
+    },
+    "binding_analysis": {
+        "ds_customers": ["grd_customers", "div_detail.form.edt_name"]
+    },
+    "script_analysis": {
+        "functions": ["fn_search", "fn_save", "fn_excel_export"],
+        "event_handlers": 5
+    }
+}`;
+
+    const getFilteredFiles = () => {
+        if (!selectedJob || !selectedJob.files) return [];
+        let filtered = selectedJob.files;
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter(file => file.status === filterStatus);
+        }
+        if (searchQuery) {
+            filtered = filtered.filter(file =>
+                file.name.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
+        return filtered;
+    };
+
+    const filteredFiles = getFilteredFiles();
+
+    const renderContent = () => {
+        if (!selectedFile) {
+            return (
+                <div className="no-selection">
+                    <p>파일을 선택하여 상세 내용을 확인하세요</p>
+                </div>
+            );
+        }
+
+        if (activeTab === 'api') {
+            return (
+                <div className="api-list-view">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>API Path</th>
+                                <th>Description</th>
+                                <th>Parameters</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sampleApiSpec.map((api, idx) => (
+                                <tr key={idx}>
+                                    <td><span className={`badge ${api.method === 'GET' ? 'internal' : 'external'}`}>{api.method}</span></td>
+                                    <td>{api.path}</td>
+                                    <td>{api.desc}</td>
+                                    <td>{api.params}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        if (activeTab === 'document') {
+            return (
+                <div className="code-viewer">
+                    <pre className="code-content" style={{ whiteSpace: 'pre-wrap', fontFamily: 'sans-serif' }}>
+                        {sampleOverview}
+                    </pre>
+                </div>
+            );
+        }
+
+        let content = '';
+        if (activeTab === 'nxfdl') content = sampleNexacroScreen;
+        else if (activeTab === 'nxmls') content = sampleNexacroInterface;
+        else if (activeTab === 'mock') content = sampleMock;
+        else if (activeTab === 'screen') content = sampleParserInfo;
+
         return (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 2H9L12 5V14H4V2Z" fill="#6B7280" opacity="0.2" />
-                <path d="M9 2V5H12" stroke="#6B7280" strokeWidth="1" />
-                <path d="M4 2H9L12 5V14H4V2Z" stroke="#6B7280" strokeWidth="1" fill="none" />
-            </svg>
+            <div className="code-viewer">
+                <pre className="code-content">
+                    <code>{content}</code>
+                </pre>
+            </div>
         );
     };
+
+    if (!selectedJob) {
+        return (
+            <div className="report">
+                <div className="report-header">
+                    <h2>UI 변환 결과 보고서</h2>
+                    <p className="report-subtitle">변환 작업을 선택하여 결과를 확인하세요</p>
+                </div>
+
+                <div className="job-list-container">
+                    {jobs.length === 0 ? (
+                        <div className="no-jobs">
+                            <p>변환 작업 내역이 없습니다</p>
+                            <p className="no-jobs-hint">변환 작업 메뉴에서 변환을 실행해주세요</p>
+                        </div>
+                    ) : (
+                        <div className="table-container">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>작업명</th>
+                                        <th>총개수</th>
+                                        <th>정상개수</th>
+                                        <th>실패개수</th>
+                                        <th>소요시간</th>
+                                        <th>변환일시</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {jobs.map((job) => (
+                                        <tr key={job.id} onClick={() => setSelectedJob(job)} style={{ cursor: 'pointer' }}>
+                                            <td className="job-name-cell">{job.jobName}</td>
+                                            <td>{job.totalCount}</td>
+                                            <td className="success-count">{job.successCount}</td>
+                                            <td className="fail-count">{job.failCount}</td>
+                                            <td>{job.duration}</td>
+                                            <td>{job.convertedAt}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="report">
             <div className="report-header">
-                <div className="header-content">
-                    <div className="tab-header">
+                <div className="header-left">
+                    <div className="header-title-group">
+                        <button
+                            className="back-button"
+                            onClick={() => {
+                                setSelectedJob(null);
+                                setSelectedFile(null);
+                                setFilterStatus('all');
+                                setSearchQuery('');
+                            }}
+                        >
+                            ← 작업 목록으로
+                        </button>
+                        <span className="job-name-small">{selectedJob.jobName}</span>
+                    </div>
+                    <div className="report-tabs" style={{ marginLeft: '20px', alignSelf: 'flex-start', marginTop: '4px' }}>
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -96,129 +288,32 @@ function Report() {
 
             <div className="report-layout">
                 <div className="file-list-panel">
-                    <div className="panel-header">
-                        <h3>변환 완료 화면</h3>
+                    <div className="file-list-header">
+                        <h3>변환 파일</h3>
+                        <div className="filter-controls">
+                            <div className="filter-buttons">
+                                <button className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>전체 ({selectedJob.files?.length || 0})</button>
+                                <button className={`filter-btn success ${filterStatus === 'success' ? 'active' : ''}`} onClick={() => setFilterStatus('success')}>성공 ({selectedJob.successCount})</button>
+                                <button className={`filter-btn error ${filterStatus === 'error' ? 'active' : ''}`} onClick={() => setFilterStatus('error')}>실패 ({selectedJob.failCount})</button>
+                            </div>
+                            <input type="text" className="search-input" placeholder="파일명 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        </div>
                     </div>
-                    <div className="file-items">
-                        {convertedFiles.map((file) => (
-                            <div
-                                key={file.id}
-                                className={`file-item ${selectedFile?.id === file.id ? 'active' : ''}`}
-                                onClick={() => setSelectedFile(file)}
-                            >
-                                <div className="file-info">
-                                    <span className="file-icon">{getFileIcon(file.name)}</span>
-                                    <span className="file-name">{file.name}</span>
-                                    <span className={`badge badge-${file.status === 'success' ? 'success' : 'error'}`}>
-                                        {file.status === 'success' ? '✓' : '✗'}
-                                    </span>
-                                </div>
+                    <div className="file-list">
+                        {filteredFiles.length === 0 ? <div className="no-files">검색 결과가 없습니다</div> : filteredFiles.map((file) => (
+                            <div key={file.id} className={`file-item ${selectedFile?.id === file.id ? 'active' : ''} ${file.status}`} onClick={() => setSelectedFile(file)}>
+                                <div className="file-icon">{file.status === 'success' ? '✓' : '✗'}</div>
+                                <span className="file-name">{file.name}</span>
+                                <span className={`status-badge ${file.status === 'success' ? 'success' : 'error'}`}>
+                                    {file.status === 'success' ? '성공' : '실패'}
+                                </span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 <div className="detail-panel">
-                    {selectedFile ? (
-                        <div className="tab-content">
-                            {activeTab === 'screen' && (
-                                <div className="code-view">
-                                    <pre className="code-block">{`<?xml version="1.0" encoding="utf-8"?>
-<FDL version="2.1">
-  <Form id="UserList">
-    <Layouts>
-      <Layout>
-        <Grid id="grd_list" taborder="0" binddataset="ds_list">
-          <Columns>
-            <Column size="80" band="left"/>
-            <Column size="150"/>
-            <Column size="100"/>
-          </Columns>
-        </Grid>
-      </Layout>
-    </Layouts>
-  </Form>
-</FDL>`}</pre>
-                                </div>
-                            )}
-
-                            {activeTab === 'interface' && (
-                                <div className="code-view">
-                                    <pre className="code-block">{`Dataset: ds_list
-Columns:
-  - user_id (STRING)
-  - user_name (STRING)
-  - email (STRING)
-  - status (STRING)
-
-Service Bindings:
-  - getUserList() → /api/users
-  - saveUser() → /api/users/save
-  - deleteUser() → /api/users/delete`}</pre>
-                                </div>
-                            )}
-
-                            {activeTab === 'overview' && (
-                                <div className="code-view">
-                                    <div style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
-                                        <p><strong>화면명:</strong> 사용자 목록 관리</p>
-                                        <p><strong>주요 기능:</strong></p>
-                                        <ul style={{ marginLeft: '2rem', marginTop: '0.5rem' }}>
-                                            <li>사용자 목록 조회 및 표시</li>
-                                            <li>사용자 정보 등록/수정/삭제</li>
-                                            <li>검색 및 필터링 기능</li>
-                                            <li>페이지네이션</li>
-                                        </ul>
-                                        <p style={{ marginTop: '1rem' }}><strong>사용 컴포넌트:</strong> Grid, Button, Input, Modal</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'mock' && (
-                                <div className="code-view">
-                                    <pre className="code-block">{`{
-  "users": [
-    {
-      "user_id": "U001",
-      "user_name": "김철수",
-      "email": "kim@example.com",
-      "status": "active"
-    },
-    {
-      "user_id": "U002",
-      "user_name": "이영희",
-      "email": "lee@example.com",
-      "status": "active"
-    }
-  ]
-}`}</pre>
-                                </div>
-                            )}
-
-                            {activeTab === 'api' && (
-                                <div className="api-list">
-                                    <div className="api-items">
-                                        <div className="api-item">
-                                            <span className="api-method get">GET</span>
-                                            <span className="api-path">/api/users</span>
-                                        </div>
-                                        <div className="api-item">
-                                            <span className="api-method post">POST</span>
-                                            <span className="api-path">/api/users/save</span>
-                                        </div>
-                                        <div className="api-item">
-                                            <span className="api-method delete">DELETE</span>
-                                            <span className="api-path">/api/users/delete</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="empty-state">
-                            <p>좌측에서 화면을 선택하세요</p>
-                        </div>
-                    )}
+                    {renderContent()}
                 </div>
             </div>
         </div>

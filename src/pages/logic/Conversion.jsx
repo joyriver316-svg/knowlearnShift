@@ -1,29 +1,68 @@
 // Reusing Conversion styles
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../java/Conversion.css';
+import { generateJobName, saveJob } from '../../utils/jobStorage';
 
 function Conversion() {
     const [sourcePath, setSourcePath] = useState('');
     const [guidePath, setGuidePath] = useState('');
     const [outputPath, setOutputPath] = useState('');
-    const [aiModel, setAiModel] = useState('gpt4');
+    const [jobName, setJobName] = useState('');
     const [isConverting, setIsConverting] = useState(false);
     const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        setJobName(generateJobName('logic'));
+    }, []);
 
     const handleStartConversion = () => {
         setIsConverting(true);
         setProgress(0);
+        const startTime = Date.now();
 
         const interval = setInterval(() => {
             setProgress(prev => {
                 if (prev >= 100) {
                     clearInterval(interval);
                     setIsConverting(false);
+
+                    const endTime = Date.now();
+                    const duration = Math.round((endTime - startTime) / 1000);
+                    const totalCount = 18;
+                    const successCount = 16;
+                    const failCount = 2;
+
+                    saveJob('logic', {
+                        jobName,
+                        totalCount,
+                        successCount,
+                        failCount,
+                        duration: `${duration}초`,
+                        convertedAt: new Date().toLocaleString('ko-KR'),
+                        sourcePath,
+                        guidePath,
+                        outputPath,
+                        outputPath,
+                        files: generateSampleFiles(totalCount, successCount)
+                    });
+
                     return 100;
                 }
                 return prev + 10;
             });
         }, 500);
+    };
+
+    const generateSampleFiles = (total, success) => {
+        const files = [];
+        for (let i = 1; i <= total; i++) {
+            files.push({
+                id: i,
+                name: `Procedure${i}.sql`,
+                status: i <= success ? 'success' : 'error'
+            });
+        }
+        return files;
     };
 
     const handleBrowse = (type) => {
@@ -51,6 +90,18 @@ function Conversion() {
             <div className="conversion-header">
                 <h2>로직 마이그레이션 작업</h2>
                 <p className="conversion-subtitle">Stored Procedure를 Java 기반 Layered Architecture로 변환하세요</p>
+
+                <div className="job-name-section">
+                    <label htmlFor="jobName">작업명</label>
+                    <input
+                        id="jobName"
+                        type="text"
+                        value={jobName}
+                        onChange={(e) => setJobName(e.target.value)}
+                        className="job-name-input"
+                        placeholder="작업명을 입력하세요"
+                    />
+                </div>
             </div>
 
             <div className="conversion-form">
@@ -123,19 +174,7 @@ function Conversion() {
                 </div>
 
                 <div className="form-section">
-                    <h3>AI 모델 및 변환 옵션</h3>
-                    <div className="form-group">
-                        <label>AI 모델 선택</label>
-                        <select
-                            value={aiModel}
-                            onChange={(e) => setAiModel(e.target.value)}
-                            className="form-input"
-                        >
-                            <option value="gpt4">GPT-4</option>
-                            <option value="claude">Claude 3.5 Sonnet</option>
-                            <option value="gemini">Gemini Pro</option>
-                        </select>
-                    </div>
+                    <h3>변환 옵션</h3>
                     <div className="options-grid">
                         <label className="checkbox-label">
                             <input type="checkbox" defaultChecked />

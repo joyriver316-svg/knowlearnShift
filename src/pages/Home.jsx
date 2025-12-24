@@ -1,8 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Home.css';
 import logo from '../assets/logo.png';
 
 function Home() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
     const features = [
         {
             id: 'java',
@@ -108,8 +112,34 @@ function Home() {
                                         </li>
                                     ))}
                                 </ul>
-                                <div className="feature-cta">
-                                    시작하기 →
+                                <div className="feature-cta-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                                    <div className="feature-cta">
+                                        시작하기 →
+                                    </div>
+                                    {user?.role === 'admin' && feature.id === 'logic' && (
+                                        <button
+                                            className="settings-btn-home"
+                                            onClick={(e) => {
+                                                e.preventDefault(); // Prevent Link navigation
+                                                e.stopPropagation();
+                                                navigate('/settings');
+                                            }}
+                                            style={{
+                                                padding: '6px 12px',
+                                                fontSize: '0.8rem',
+                                                background: 'rgba(255,255,255,0.2)',
+                                                border: '1px solid rgba(255,255,255,0.4)',
+                                                borderRadius: '20px',
+                                                color: 'white',
+                                                cursor: 'pointer',
+                                                zIndex: 10,
+                                                fontWeight: 'bold',
+                                                transition: 'background 0.2s'
+                                            }}
+                                        >
+                                            ⚙ 환경설정
+                                        </button>
+                                    )}
                                 </div>
                             </Link>
                         ))}

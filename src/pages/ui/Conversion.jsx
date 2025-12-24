@@ -1,28 +1,69 @@
 // Reusing Conversion styles from java/Conversion.css
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../java/Conversion.css';
+import { generateJobName, saveJob } from '../../utils/jobStorage';
 
 function Conversion() {
     const [sourcePath, setSourcePath] = useState('');
     const [guidePath, setGuidePath] = useState('');
     const [outputPath, setOutputPath] = useState('');
+    const [jobName, setJobName] = useState('');
     const [isConverting, setIsConverting] = useState(false);
     const [progress, setProgress] = useState(0);
+
+    // Generate job name on component mount
+    useEffect(() => {
+        setJobName(generateJobName('ui'));
+    }, []);
 
     const handleStartConversion = () => {
         setIsConverting(true);
         setProgress(0);
+        const startTime = Date.now();
 
         const interval = setInterval(() => {
             setProgress(prev => {
                 if (prev >= 100) {
                     clearInterval(interval);
                     setIsConverting(false);
+
+                    // Save job data
+                    const endTime = Date.now();
+                    const duration = Math.round((endTime - startTime) / 1000);
+                    const totalCount = 12;
+                    const successCount = 11;
+                    const failCount = 1;
+
+                    saveJob('ui', {
+                        jobName,
+                        totalCount,
+                        successCount,
+                        failCount,
+                        duration: `${duration}초`,
+                        convertedAt: new Date().toLocaleString('ko-KR'),
+                        sourcePath,
+                        guidePath,
+                        outputPath,
+                        files: generateSampleFiles(totalCount, successCount)
+                    });
+
                     return 100;
                 }
                 return prev + 10;
             });
         }, 500);
+    };
+
+    const generateSampleFiles = (total, success) => {
+        const files = [];
+        for (let i = 1; i <= total; i++) {
+            files.push({
+                id: i,
+                name: `Component${i}.jsx`,
+                status: i <= success ? 'success' : 'error'
+            });
+        }
+        return files;
     };
 
     const handleBrowse = (type) => {
@@ -50,6 +91,18 @@ function Conversion() {
             <div className="conversion-header">
                 <h2>UI 변환 작업</h2>
                 <p className="conversion-subtitle">Nexacro 화면 파일을 React 컴포넌트로 변환하세요</p>
+
+                <div className="job-name-section">
+                    <label htmlFor="jobName">작업명</label>
+                    <input
+                        id="jobName"
+                        type="text"
+                        value={jobName}
+                        onChange={(e) => setJobName(e.target.value)}
+                        className="job-name-input"
+                        placeholder="작업명을 입력하세요"
+                    />
+                </div>
             </div>
 
             <div className="conversion-form">

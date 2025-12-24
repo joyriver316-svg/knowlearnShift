@@ -1,16 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Conversion.css';
+import { generateJobName, saveJob } from '../../utils/jobStorage';
 
 function Conversion() {
     const [sourcePath, setSourcePath] = useState('');
     const [guidePath, setGuidePath] = useState('');
     const [outputPath, setOutputPath] = useState('');
+    const [jobName, setJobName] = useState('');
     const [isConverting, setIsConverting] = useState(false);
     const [progress, setProgress] = useState(0);
+
+    // Generate job name on component mount
+    useEffect(() => {
+        setJobName(generateJobName('java'));
+    }, []);
 
     const handleStartConversion = () => {
         setIsConverting(true);
         setProgress(0);
+        const startTime = Date.now();
 
         // Simulate conversion progress
         const interval = setInterval(() => {
@@ -18,11 +26,44 @@ function Conversion() {
                 if (prev >= 100) {
                     clearInterval(interval);
                     setIsConverting(false);
+
+                    // Save job data when conversion completes
+                    const endTime = Date.now();
+                    const duration = Math.round((endTime - startTime) / 1000);
+                    const totalCount = 15;
+                    const successCount = 13;
+                    const failCount = 2;
+
+                    saveJob('java', {
+                        jobName,
+                        totalCount,
+                        successCount,
+                        failCount,
+                        duration: `${duration}초`,
+                        convertedAt: new Date().toLocaleString('ko-KR'),
+                        sourcePath,
+                        guidePath,
+                        outputPath,
+                        files: generateSampleFiles(totalCount, successCount)
+                    });
+
                     return 100;
                 }
                 return prev + 10;
             });
         }, 500);
+    };
+
+    const generateSampleFiles = (total, success) => {
+        const files = [];
+        for (let i = 1; i <= total; i++) {
+            files.push({
+                id: i,
+                name: `File${i}.java`,
+                status: i <= success ? 'success' : 'error'
+            });
+        }
+        return files;
     };
 
     const handleBrowse = (type) => {
@@ -50,6 +91,18 @@ function Conversion() {
             <div className="conversion-header">
                 <h2>Java 변환 작업</h2>
                 <p className="conversion-subtitle">소스 파일 경로를 설정하고 변환을 시작하세요</p>
+
+                <div className="job-name-section">
+                    <label htmlFor="jobName">작업명</label>
+                    <input
+                        id="jobName"
+                        type="text"
+                        value={jobName}
+                        onChange={(e) => setJobName(e.target.value)}
+                        className="job-name-input"
+                        placeholder="작업명을 입력하세요"
+                    />
+                </div>
             </div>
 
             <div className="conversion-form">

@@ -1,8 +1,16 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
 function Header() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
     return (
         <header className="header">
@@ -62,7 +70,51 @@ function Header() {
                         >
                             로직 마이그레이션
                         </Link>
+                        {user?.role === 'admin' && (
+                            <Link
+                                to="/settings"
+                                className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}
+                            >
+                                환경설정
+                            </Link>
+                        )}
                     </nav>
+                    <div className="auth-section">
+                        {user ? (
+                            <div className="user-info" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '0.9rem', color: '#4b5563' }}>
+                                    Hello, <strong>{user.username}</strong>
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="btn-text"
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#6b7280',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        padding: '4px 8px',
+                                        textDecoration: 'underline'
+                                    }}
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        ) : (
+                            <Link to="/login" className="btn-login" style={{
+                                padding: '6px 16px',
+                                background: '#4f46e5',
+                                color: 'white',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                fontSize: '0.9rem',
+                                fontWeight: '500'
+                            }}>
+                                Login
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
         </header>

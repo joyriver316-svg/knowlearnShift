@@ -1,26 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Report.css';
+import './Dashboard.css';
+import { getJobs } from '../../utils/jobStorage';
 
 function Report() {
+    const [jobs, setJobs] = useState([]);
+    const [selectedJob, setSelectedJob] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeTab, setActiveTab] = useState('original');
+    const [convertedTab, setConvertedTab] = useState('controller'); // 'controller', 'service'
+    const [parameterTab, setParameterTab] = useState('before'); // 'before', 'after'
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const convertedFiles = [
-        { id: 1, name: 'UserService.java', status: 'success', apis: 5, params: 12 },
-        { id: 2, name: 'OrderController.java', status: 'success', apis: 8, params: 20 },
-        { id: 3, name: 'ProductRepository.java', status: 'success', apis: 6, params: 15 },
-        { id: 4, name: 'PaymentService.java', status: 'error', apis: 0, params: 0 },
-        { id: 5, name: 'AuthController.java', status: 'success', apis: 4, params: 10 },
-        { id: 6, name: 'CustomerService.java', status: 'success', apis: 7, params: 18 },
-        { id: 7, name: 'InvoiceController.java', status: 'success', apis: 5, params: 14 },
-        { id: 8, name: 'ReportService.java', status: 'success', apis: 9, params: 22 }
-    ];
+    useEffect(() => {
+        const loadedJobs = getJobs('java');
+        setJobs(loadedJobs);
+    }, []);
 
     const tabs = [
         { id: 'original', label: '원소스' },
         { id: 'converted', label: '변환소스' },
-        { id: 'apis', label: '호출 API' },
-        { id: 'params', label: '파라미터' }
+        { id: 'api', label: '호출 API' },
+        { id: 'parameter', label: '파라미터' }
     ];
 
     const sampleOriginal = `// Java 1.6 Legacy Code
@@ -40,75 +42,231 @@ public class UserService {
     }
 }`;
 
-    const sampleConverted = `// Java 21 Modern Code
+    const sampleConvertedController = `// Java 21 Controller
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    @GetMapping("/active")
+    public List<UserDto> getActiveUsers() {
+        return userService.getActiveUsers();
+    }
+}`;
+
+    const sampleConvertedService = `// Java 21 Service
 @Service
+@RequiredArgsConstructor
 public class UserService {
-    private final List<User> users = new CopyOnWriteArrayList<>();
-    private final Map<String, String> cache = new ConcurrentHashMap<>();
+    private final UserRepository userRepository;
     
-    public List<User> getActiveUsers() {
-        return users.stream()
-            .filter(User::isActive)
+    public List<UserDto> getActiveUsers() {
+        return userRepository.findAllByActiveTrue()
+            .stream()
+            .map(UserDto::from)
             .toList();
     }
 }`;
 
-    const getFileIcon = (filename) => {
-        if (filename.endsWith('.java')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 2C6.5 3.5 6.5 5 8 6.5C9.5 5 9.5 3.5 8 2Z" fill="#EA2D2E" />
-                    <path d="M8 9.5C6.5 11 6.5 12.5 8 14C9.5 12.5 9.5 11 8 9.5Z" fill="#0074BD" />
-                    <path d="M4 5.5C4 5.5 5.5 6 8 6C10.5 6 12 5.5 12 5.5C12 5.5 10.5 7 8 7C5.5 7 4 5.5 4 5.5Z" fill="#EA2D2E" />
-                    <path d="M4 9C4 9 5.5 9.5 8 9.5C10.5 9.5 12 9 12 9C12 9 10.5 10.5 8 10.5C5.5 10.5 4 9 4 9Z" fill="#0074BD" />
-                </svg>
-            );
-        } else if (filename.endsWith('.jsx') || filename.endsWith('.js')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="8" cy="8" r="6" fill="#61DAFB" opacity="0.2" />
-                    <ellipse cx="8" cy="8" rx="6" ry="2.5" stroke="#61DAFB" strokeWidth="0.8" fill="none" />
-                    <ellipse cx="8" cy="8" rx="2.5" ry="6" stroke="#61DAFB" strokeWidth="0.8" fill="none" />
-                    <ellipse cx="8" cy="8" rx="5.2" ry="4.3" stroke="#61DAFB" strokeWidth="0.8" fill="none" transform="rotate(60 8 8)" />
-                    <circle cx="8" cy="8" r="1.5" fill="#61DAFB" />
-                </svg>
-            );
-        } else if (filename.endsWith('.css')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 2L4 14L8 15L12 14L13 2H3Z" fill="#1572B6" />
-                    <path d="M8 3V14L11.5 13L12.3 3H8Z" fill="#33A9DC" />
-                    <path d="M8 6H10.5L10.7 4H8V6Z" fill="white" />
-                    <path d="M8 10H10L9.8 11.5L8 12V10Z" fill="white" />
-                    <path d="M8 6V4H5.5L5.7 6H8Z" fill="#EBEBEB" />
-                    <path d="M8 12V10H6L6.2 11.5L8 12Z" fill="#EBEBEB" />
-                </svg>
-            );
-        } else if (filename.endsWith('.xml') || filename.endsWith('.xfdl')) {
-            return (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="2" width="12" height="12" rx="1" fill="#E44D26" opacity="0.1" />
-                    <path d="M4 4L5 5M5 5L6 4M5 5L4 6M5 5L6 6" stroke="#E44D26" strokeWidth="1" strokeLinecap="round" />
-                    <path d="M10 4L11 5M11 5L12 4M11 5L10 6M11 5L12 6" stroke="#E44D26" strokeWidth="1" strokeLinecap="round" />
-                    <path d="M6 8H10M7 10H9" stroke="#E44D26" strokeWidth="1" strokeLinecap="round" />
-                    <circle cx="8" cy="8" r="0.5" fill="#E44D26" />
-                </svg>
+    const sampleApiList = [
+        { type: 'Internal', method: 'GET', path: '/api/v1/orders/{id}', description: '주문 상세 정보 조회' },
+        { type: 'External', method: 'POST', path: 'https://payment-gateway.com/api/pay', description: '결제 승인 요청' },
+        { type: 'Internal', method: 'PUT', path: '/api/v1/users/{id}/status', description: '사용자 상태 변경' }
+    ];
+
+    const sampleParamBefore = `// Legacy Parameter Structure
+Map<String, Object> inputParams = new HashMap<String, Object>();
+inputParams.put("userId", "String");     // 사용자 ID
+inputParams.put("searchType", "int");    // 검색 유형 (1: 이름, 2: 이메일)
+inputParams.put("page", "int");          // 페이지 번호`;
+
+    const sampleParamAfter = `// Modern DTO Structure
+public record UserSearchRequest(
+    @NotBlank String userId,
+    @Min(1) @Max(2) int searchType,
+    @Positive int page
+) {}`;
+
+    const getFilteredFiles = () => {
+        if (!selectedJob || !selectedJob.files) return [];
+        let filtered = selectedJob.files;
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter(file => file.status === filterStatus);
+        }
+        if (searchQuery) {
+            filtered = filtered.filter(file =>
+                file.name.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-        return (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 2H9L12 5V14H4V2Z" fill="#6B7280" opacity="0.2" />
-                <path d="M9 2V5H12" stroke="#6B7280" strokeWidth="1" />
-                <path d="M4 2H9L12 5V14H4V2Z" stroke="#6B7280" strokeWidth="1" fill="none" />
-            </svg>
-        );
+        return filtered;
     };
+
+    const filteredFiles = getFilteredFiles();
+
+    // Helper to render content based on tabs
+    const renderContent = () => {
+        if (!selectedFile) {
+            return (
+                <div className="no-selection">
+                    <p>파일을 선택하여 상세 내용을 확인하세요</p>
+                </div>
+            );
+        }
+
+        if (activeTab === 'original') {
+            return (
+                <div className="code-viewer">
+                    <pre className="code-content"><code>{sampleOriginal}</code></pre>
+                </div>
+            );
+        }
+
+        if (activeTab === 'converted') {
+            return (
+                <div className="tab-content-wrapper">
+                    <div className="sub-tabs">
+                        <button
+                            className={`sub-tab-btn ${convertedTab === 'controller' ? 'active' : ''}`}
+                            onClick={() => setConvertedTab('controller')}
+                        >
+                            Controller
+                        </button>
+                        <button
+                            className={`sub-tab-btn ${convertedTab === 'service' ? 'active' : ''}`}
+                            onClick={() => setConvertedTab('service')}
+                        >
+                            Service
+                        </button>
+                    </div>
+                    <div className="code-viewer">
+                        <pre className="code-content">
+                            <code>{convertedTab === 'controller' ? sampleConvertedController : sampleConvertedService}</code>
+                        </pre>
+                    </div>
+                </div>
+            );
+        }
+
+        if (activeTab === 'api') {
+            return (
+                <div className="api-list-view">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>유형</th>
+                                <th>Method</th>
+                                <th>API Path</th>
+                                <th>설명</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sampleApiList.map((api, idx) => (
+                                <tr key={idx}>
+                                    <td><span className={`badge ${api.type.toLowerCase()}`}>{api.type}</span></td>
+                                    <td>{api.method}</td>
+                                    <td>{api.path}</td>
+                                    <td>{api.description}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        if (activeTab === 'parameter') {
+            return (
+                <div className="tab-content-wrapper">
+                    <div className="sub-tabs">
+                        <button
+                            className={`sub-tab-btn ${parameterTab === 'before' ? 'active' : ''}`}
+                            onClick={() => setParameterTab('before')}
+                        >
+                            변경전
+                        </button>
+                        <button
+                            className={`sub-tab-btn ${parameterTab === 'after' ? 'active' : ''}`}
+                            onClick={() => setParameterTab('after')}
+                        >
+                            변경후
+                        </button>
+                    </div>
+                    <div className="code-viewer">
+                        <pre className="code-content">
+                            <code>{parameterTab === 'before' ? sampleParamBefore : sampleParamAfter}</code>
+                        </pre>
+                    </div>
+                </div>
+            );
+        }
+    };
+
+    if (!selectedJob) {
+        return (
+            <div className="report">
+                <div className="report-header">
+                    <h2>Java 변환 결과 보고서</h2>
+                    <p className="report-subtitle">변환 작업을 선택하여 결과를 확인하세요</p>
+                </div>
+                <div className="job-list-container">
+                    {jobs.length === 0 ? (
+                        <div className="no-jobs">
+                            <p>변환 작업 내역이 없습니다</p>
+                            <p className="no-jobs-hint">변환 작업 메뉴에서 변환을 실행해주세요</p>
+                        </div>
+                    ) : (
+                        <div className="table-container">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>작업명</th>
+                                        <th>총개수</th>
+                                        <th>정상개수</th>
+                                        <th>실패개수</th>
+                                        <th>소요시간</th>
+                                        <th>변환일시</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {jobs.map((job) => (
+                                        <tr key={job.id} onClick={() => setSelectedJob(job)} style={{ cursor: 'pointer' }}>
+                                            <td className="job-name-cell">{job.jobName}</td>
+                                            <td>{job.totalCount}</td>
+                                            <td className="success-count">{job.successCount}</td>
+                                            <td className="fail-count">{job.failCount}</td>
+                                            <td>{job.duration}</td>
+                                            <td>{job.convertedAt}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="report">
             <div className="report-header">
-                <div className="header-content">
-                    <div className="tab-header">
+                <div className="header-left">
+                    <div className="header-title-group">
+                        <button
+                            className="back-button"
+                            onClick={() => {
+                                setSelectedJob(null);
+                                setSelectedFile(null);
+                                setFilterStatus('all');
+                                setSearchQuery('');
+                            }}
+                        >
+                            ← 작업 목록으로
+                        </button>
+                        <span className="job-name-small">{selectedJob.jobName}</span>
+                    </div>
+                    <div className="report-tabs" style={{ marginLeft: '20px', alignSelf: 'flex-start', marginTop: '4px' }}>
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -124,116 +282,32 @@ public class UserService {
 
             <div className="report-layout">
                 <div className="file-list-panel">
-                    <div className="panel-header">
-                        <h3>변환 완료 파일</h3>
+                    <div className="file-list-header">
+                        <h3>변환 파일</h3>
+                        <div className="filter-controls">
+                            <div className="filter-buttons">
+                                <button className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>전체 ({selectedJob.files?.length || 0})</button>
+                                <button className={`filter-btn success ${filterStatus === 'success' ? 'active' : ''}`} onClick={() => setFilterStatus('success')}>성공 ({selectedJob.successCount})</button>
+                                <button className={`filter-btn error ${filterStatus === 'error' ? 'active' : ''}`} onClick={() => setFilterStatus('error')}>실패 ({selectedJob.failCount})</button>
+                            </div>
+                            <input type="text" className="search-input" placeholder="파일명 검색..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        </div>
                     </div>
-                    <div className="file-items">
-                        {convertedFiles.map((file) => (
-                            <div
-                                key={file.id}
-                                className={`file-item ${selectedFile?.id === file.id ? 'active' : ''}`}
-                                onClick={() => setSelectedFile(file)}
-                            >
-                                <div className="file-info">
-                                    <span className="file-icon">{getFileIcon(file.name)}</span>
-                                    <span className="file-name">{file.name}</span>
-                                    <span className={`badge badge-${file.status === 'success' ? 'success' : 'error'}`}>
-                                        {file.status === 'success' ? '✓' : '✗'}
-                                    </span>
-                                </div>
+                    <div className="file-list">
+                        {filteredFiles.length === 0 ? <div className="no-files">검색 결과가 없습니다</div> : filteredFiles.map((file) => (
+                            <div key={file.id} className={`file-item ${selectedFile?.id === file.id ? 'active' : ''} ${file.status}`} onClick={() => setSelectedFile(file)}>
+                                <div className="file-icon">{file.status === 'success' ? '✓' : '✗'}</div>
+                                <span className="file-name">{file.name}</span>
+                                <span className={`status-badge ${file.status === 'success' ? 'success' : 'error'}`}>
+                                    {file.status === 'success' ? '성공' : '실패'}
+                                </span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 <div className="detail-panel">
-                    {selectedFile ? (
-                        <div className="tab-content">
-                            {activeTab === 'original' && (
-                                <div className="code-view">
-                                    <pre className="code-block">{sampleOriginal}</pre>
-                                </div>
-                            )}
-
-                            {activeTab === 'converted' && (
-                                <div className="code-view">
-                                    <pre className="code-block">{sampleConverted}</pre>
-                                </div>
-                            )}
-
-                            {activeTab === 'apis' && (
-                                <div className="api-list">
-                                    <div className="api-items">
-                                        <div className="api-item">
-                                            <span className="api-method get">GET</span>
-                                            <span className="api-path">/api/users/active</span>
-                                        </div>
-                                        <div className="api-item">
-                                            <span className="api-method post">POST</span>
-                                            <span className="api-path">/api/users</span>
-                                        </div>
-                                        <div className="api-item">
-                                            <span className="api-method put">PUT</span>
-                                            <span className="api-path">/api/users/{id}</span>
-                                        </div>
-                                        <div className="api-item">
-                                            <span className="api-method delete">DELETE</span>
-                                            <span className="api-path">/api/users/{id}</span>
-                                        </div>
-                                        <div className="api-item">
-                                            <span className="api-method get">GET</span>
-                                            <span className="api-path">/api/users/{id}/profile</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'params' && (
-                                <div className="params-view">
-                                    <table className="params-table">
-                                        <thead>
-                                            <tr>
-                                                <th>메서드</th>
-                                                <th>입력 파라미터</th>
-                                                <th>반환 타입</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>getActiveUsers</td>
-                                                <td>없음</td>
-                                                <td>List&lt;User&gt;</td>
-                                            </tr>
-                                            <tr>
-                                                <td>createUser</td>
-                                                <td>UserDTO dto</td>
-                                                <td>User</td>
-                                            </tr>
-                                            <tr>
-                                                <td>updateUser</td>
-                                                <td>Long id, UserDTO dto</td>
-                                                <td>User</td>
-                                            </tr>
-                                            <tr>
-                                                <td>deleteUser</td>
-                                                <td>Long id</td>
-                                                <td>void</td>
-                                            </tr>
-                                            <tr>
-                                                <td>getUserProfile</td>
-                                                <td>Long id</td>
-                                                <td>UserProfile</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="empty-state">
-                            <p>좌측에서 파일을 선택하세요</p>
-                        </div>
-                    )}
+                    {renderContent()}
                 </div>
             </div>
         </div>
@@ -241,4 +315,3 @@ public class UserService {
 }
 
 export default Report;
-

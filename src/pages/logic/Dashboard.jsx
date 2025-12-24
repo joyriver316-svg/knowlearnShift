@@ -1,27 +1,75 @@
-// Reusing Dashboard styles
+import { useState, useEffect } from 'react';
 import '../java/Dashboard.css';
+import { getJobs, saveJob } from '../../utils/jobStorage';
 
 function Dashboard() {
-    const stats = [
-        { label: '총 SP 건수', value: '486', change: '+24%', trend: 'up' },
-        { label: '변환 성공률', value: '94.8%', change: '+1.8%', trend: 'up' },
-        { label: '평균 변환 시간', value: '4.2분', change: '-18%', trend: 'down' },
-        { label: '생성된 클래스', value: '2,134', change: '+312', trend: 'up' }
-    ];
+    const [jobs, setJobs] = useState([]);
 
-    const recentConversions = [
-        { id: 1, name: 'SP_GET_USER_LIST', status: 'success', time: '4분 15초', date: '2024-12-24 08:30' },
-        { id: 2, name: 'SP_INSERT_ORDER', status: 'success', time: '3분 45초', date: '2024-12-24 08:25' },
-        { id: 3, name: 'SP_UPDATE_PRODUCT', status: 'success', time: '5분 10초', date: '2024-12-24 08:20' },
-        { id: 4, name: 'SP_DELETE_PAYMENT', status: 'error', time: '2분 30초', date: '2024-12-24 08:15' },
-        { id: 5, name: 'SP_CALCULATE_TOTAL', status: 'success', time: '3분 55초', date: '2024-12-24 08:10' }
+    useEffect(() => {
+        let loadedJobs = getJobs('logic');
+
+        if (loadedJobs.length === 0) {
+            const mockJobs = [
+                {
+                    jobName: '로직 마이그레이션 작업_2024-12-24 16:00',
+                    totalCount: 18,
+                    successCount: 16,
+                    failCount: 2,
+                    duration: '65초',
+                    convertedAt: '2024. 12. 24. 오후 4:00:00',
+                    files: Array.from({ length: 18 }, (_, i) => ({
+                        id: i + 1,
+                        name: `sp_user_${i + 1}.sql`,
+                        status: i < 16 ? 'success' : 'error'
+                    }))
+                },
+                {
+                    jobName: '로직 마이그레이션 작업_2024-12-24 13:45',
+                    totalCount: 22,
+                    successCount: 21,
+                    failCount: 1,
+                    duration: '72초',
+                    convertedAt: '2024. 12. 24. 오후 1:45:00',
+                    files: Array.from({ length: 22 }, (_, i) => ({
+                        id: i + 1,
+                        name: `sp_order_${i + 1}.sql`,
+                        status: i < 21 ? 'success' : 'error'
+                    }))
+                },
+                {
+                    jobName: '로직 마이그레이션 작업_2024-12-23 17:30',
+                    totalCount: 14,
+                    successCount: 14,
+                    failCount: 0,
+                    duration: '58초',
+                    convertedAt: '2024. 12. 23. 오후 5:30:00',
+                    files: Array.from({ length: 14 }, (_, i) => ({
+                        id: i + 1,
+                        name: `sp_product_${i + 1}.sql`,
+                        status: 'success'
+                    }))
+                }
+            ];
+
+            mockJobs.forEach(job => saveJob('logic', job));
+            loadedJobs = getJobs('logic');
+        }
+
+        setJobs(loadedJobs.slice(0, 10));
+    }, []);
+
+    const stats = [
+        { label: '총 변환 건수', value: '642', change: '+15%', trend: 'up' },
+        { label: '성공률', value: '96.8%', change: '+3.2%', trend: 'up' },
+        { label: '평균 변환 시간', value: '3.5분', change: '-18%', trend: 'down' },
+        { label: '에러 건수', value: '21', change: '-9', trend: 'down' }
     ];
 
     return (
         <div className="dashboard">
             <div className="dashboard-header">
-                <h2>SP → Java 21 변환 대시보드</h2>
-                <p className="dashboard-subtitle">로직 마이그레이션 현황 및 통계</p>
+                <h2>SP → Java 21 마이그레이션 대시보드</h2>
+                <p className="dashboard-subtitle">실시간 변환 현황 및 통계</p>
             </div>
 
             <div className="stats-grid">
@@ -44,63 +92,35 @@ function Dashboard() {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>SP 이름</th>
-                                <th>상태</th>
-                                <th>소요 시간</th>
-                                <th>변환 일시</th>
+                                <th>작업명</th>
+                                <th>총개수</th>
+                                <th>정상개수</th>
+                                <th>실패개수</th>
+                                <th>소요시간</th>
+                                <th>변환일시</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {recentConversions.map((item) => (
-                                <tr key={item.id}>
-                                    <td className="file-name">{item.name}</td>
-                                    <td>
-                                        <span className={`badge badge-${item.status === 'success' ? 'success' : 'error'}`}>
-                                            {item.status === 'success' ? '성공' : '실패'}
-                                        </span>
+                            {jobs.length === 0 ? (
+                                <tr>
+                                    <td colSpan="6" className="no-data">
+                                        변환 내역이 없습니다
                                     </td>
-                                    <td>{item.time}</td>
-                                    <td className="date-time">{item.date}</td>
                                 </tr>
-                            ))}
+                            ) : (
+                                jobs.map((job) => (
+                                    <tr key={job.id}>
+                                        <td className="job-name-cell">{job.jobName}</td>
+                                        <td>{job.totalCount}</td>
+                                        <td className="success-count">{job.successCount}</td>
+                                        <td className="fail-count">{job.failCount}</td>
+                                        <td>{job.duration}</td>
+                                        <td>{job.convertedAt}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <div className="dashboard-grid">
-                <div className="dashboard-card">
-                    <h3>변환 기술 스택</h3>
-                    <div className="tech-list">
-                        <div className="tech-item">
-                            <span className="tech-label">소스</span>
-                            <span className="tech-value">Stored Procedure</span>
-                        </div>
-                        <div className="tech-item">
-                            <span className="tech-label">타겟</span>
-                            <span className="tech-value">Java 21 + JPA</span>
-                        </div>
-                        <div className="tech-item">
-                            <span className="tech-label">AI 모델</span>
-                            <span className="tech-value">GPT-4 / Claude 3.5</span>
-                        </div>
-                        <div className="tech-item">
-                            <span className="tech-label">아키텍처</span>
-                            <span className="tech-value">Layered Architecture</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="dashboard-card">
-                    <h3>주요 변환 항목</h3>
-                    <ul className="conversion-items">
-                        <li>SQL Logic → Java Stream</li>
-                        <li>Stored Procedure → Service Layer</li>
-                        <li>DB Table → JPA Entity</li>
-                        <li>Cursor → Java Iterator</li>
-                        <li>Transaction → @Transactional</li>
-                        <li>Function → Repository Method</li>
-                    </ul>
                 </div>
             </div>
         </div>

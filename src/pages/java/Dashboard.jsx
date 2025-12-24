@@ -1,19 +1,71 @@
+import { useState, useEffect } from 'react';
 import './Dashboard.css';
+import { getJobs, saveJob } from '../../utils/jobStorage';
 
 function Dashboard() {
+    const [jobs, setJobs] = useState([]);
+
+    useEffect(() => {
+        // Load jobs from localStorage
+        let loadedJobs = getJobs('java');
+
+        // If no jobs exist, create mock data
+        if (loadedJobs.length === 0) {
+            const mockJobs = [
+                {
+                    jobName: 'Java 변환 작업_2024-12-24 14:30',
+                    totalCount: 15,
+                    successCount: 13,
+                    failCount: 2,
+                    duration: '45초',
+                    convertedAt: '2024. 12. 24. 오후 2:30:00',
+                    files: Array.from({ length: 15 }, (_, i) => ({
+                        id: i + 1,
+                        name: `UserService${i + 1}.java`,
+                        status: i < 13 ? 'success' : 'error'
+                    }))
+                },
+                {
+                    jobName: 'Java 변환 작업_2024-12-24 10:15',
+                    totalCount: 20,
+                    successCount: 19,
+                    failCount: 1,
+                    duration: '52초',
+                    convertedAt: '2024. 12. 24. 오전 10:15:00',
+                    files: Array.from({ length: 20 }, (_, i) => ({
+                        id: i + 1,
+                        name: `Controller${i + 1}.java`,
+                        status: i < 19 ? 'success' : 'error'
+                    }))
+                },
+                {
+                    jobName: 'Java 변환 작업_2024-12-23 16:45',
+                    totalCount: 12,
+                    successCount: 12,
+                    failCount: 0,
+                    duration: '38초',
+                    convertedAt: '2024. 12. 23. 오후 4:45:00',
+                    files: Array.from({ length: 12 }, (_, i) => ({
+                        id: i + 1,
+                        name: `Repository${i + 1}.java`,
+                        status: 'success'
+                    }))
+                }
+            ];
+
+            // Save mock jobs
+            mockJobs.forEach(job => saveJob('java', job));
+            loadedJobs = getJobs('java');
+        }
+
+        setJobs(loadedJobs.slice(0, 10));
+    }, []);
+
     const stats = [
         { label: '총 변환 건수', value: '1,247', change: '+12%', trend: 'up' },
         { label: '성공률', value: '98.5%', change: '+2.3%', trend: 'up' },
         { label: '평균 변환 시간', value: '2.3분', change: '-15%', trend: 'down' },
         { label: '에러 건수', value: '18', change: '-8', trend: 'down' }
-    ];
-
-    const recentConversions = [
-        { id: 1, name: 'UserService.java', status: 'success', time: '2분 15초', date: '2024-12-24 08:30' },
-        { id: 2, name: 'OrderController.java', status: 'success', time: '1분 45초', date: '2024-12-24 08:25' },
-        { id: 3, name: 'ProductRepository.java', status: 'success', time: '3분 10초', date: '2024-12-24 08:20' },
-        { id: 4, name: 'PaymentService.java', status: 'error', time: '0분 30초', date: '2024-12-24 08:15' },
-        { id: 5, name: 'AuthController.java', status: 'success', time: '2분 00초', date: '2024-12-24 08:10' }
     ];
 
     return (
@@ -28,7 +80,7 @@ function Dashboard() {
                     <div key={index} className="stat-card">
                         <div className="stat-header">
                             <span className="stat-label">{stat.label}</span>
-                            <span className={`stat-trend ${stat.trend}`}>
+                            <span className={`stat - trend ${stat.trend} `}>
                                 {stat.change}
                             </span>
                         </div>
@@ -43,25 +95,33 @@ function Dashboard() {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>파일명</th>
-                                <th>상태</th>
-                                <th>소요 시간</th>
-                                <th>변환 일시</th>
+                                <th>작업명</th>
+                                <th>총개수</th>
+                                <th>정상개수</th>
+                                <th>실패개수</th>
+                                <th>소요시간</th>
+                                <th>변환일시</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {recentConversions.map((item) => (
-                                <tr key={item.id}>
-                                    <td className="file-name">{item.name}</td>
-                                    <td>
-                                        <span className={`badge badge-${item.status === 'success' ? 'success' : 'error'}`}>
-                                            {item.status === 'success' ? '성공' : '실패'}
-                                        </span>
+                            {jobs.length === 0 ? (
+                                <tr>
+                                    <td colSpan="6" className="no-data">
+                                        변환 내역이 없습니다
                                     </td>
-                                    <td>{item.time}</td>
-                                    <td className="date-time">{item.date}</td>
                                 </tr>
-                            ))}
+                            ) : (
+                                jobs.map((job) => (
+                                    <tr key={job.id}>
+                                        <td className="job-name-cell">{job.jobName}</td>
+                                        <td>{job.totalCount}</td>
+                                        <td className="success-count">{job.successCount}</td>
+                                        <td className="fail-count">{job.failCount}</td>
+                                        <td>{job.duration}</td>
+                                        <td>{job.convertedAt}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
