@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 import { getJobs, saveJob } from '../../utils/jobStorage';
 
 function Dashboard() {
+    const navigate = useNavigate();
     const [jobs, setJobs] = useState([]);
 
     useEffect(() => {
@@ -80,7 +82,7 @@ function Dashboard() {
                     <div key={index} className="stat-card">
                         <div className="stat-header">
                             <span className="stat-label">{stat.label}</span>
-                            <span className={`stat - trend ${stat.trend} `}>
+                            <span className={`stat-trend ${stat.trend}`}>
                                 {stat.change}
                             </span>
                         </div>
@@ -112,7 +114,11 @@ function Dashboard() {
                                 </tr>
                             ) : (
                                 jobs.map((job) => (
-                                    <tr key={job.id}>
+                                    <tr
+                                        key={job.id}
+                                        onClick={() => navigate('/java/report', { state: { jobId: job.id } })}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <td className="job-name-cell">{job.jobName}</td>
                                         <td>{job.totalCount}</td>
                                         <td className="success-count">{job.successCount}</td>

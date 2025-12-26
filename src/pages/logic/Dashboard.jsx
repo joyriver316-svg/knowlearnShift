@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../java/Dashboard.css';
 import { getJobs, saveJob } from '../../utils/jobStorage';
 
 function Dashboard() {
+    const navigate = useNavigate();
     const [jobs, setJobs] = useState([]);
 
     useEffect(() => {
@@ -109,7 +111,11 @@ function Dashboard() {
                                 </tr>
                             ) : (
                                 jobs.map((job) => (
-                                    <tr key={job.id}>
+                                    <tr
+                                        key={job.id}
+                                        onClick={() => navigate('/logic/report', { state: { jobId: job.id } })}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <td className="job-name-cell">{job.jobName}</td>
                                         <td>{job.totalCount}</td>
                                         <td className="success-count">{job.successCount}</td>

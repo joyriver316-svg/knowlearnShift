@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import './Report.css';
 import './Dashboard.css';
 import { getJobs } from '../../utils/jobStorage';
@@ -13,10 +14,20 @@ function Report() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
 
+    const location = useLocation();
+
     useEffect(() => {
         const loadedJobs = getJobs('java');
         setJobs(loadedJobs);
-    }, []);
+
+        // Check for navigation state
+        if (location.state?.jobId) {
+            const linkedJob = loadedJobs.find(job => job.id === location.state.jobId);
+            if (linkedJob) {
+                setSelectedJob(linkedJob);
+            }
+        }
+    }, [location.state]);
 
     const tabs = [
         { id: 'original', label: '원소스' },

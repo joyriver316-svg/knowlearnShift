@@ -68,16 +68,9 @@ function Header() {
                             to="/logic"
                             className={`nav-link ${location.pathname.startsWith('/logic') ? 'active' : ''}`}
                         >
-                            로직 마이그레이션
+                            SP 현대화
                         </Link>
-                        {user?.role === 'admin' && (
-                            <Link
-                                to="/settings"
-                                className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}
-                            >
-                                환경설정
-                            </Link>
-                        )}
+
                     </nav>
                     <div className="auth-section">
                         {user ? (

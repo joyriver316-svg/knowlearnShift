@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import '../java/Report.css';
 import '../java/Dashboard.css';
 import { getJobs } from '../../utils/jobStorage';
@@ -8,17 +9,29 @@ function Report() {
     const [selectedJob, setSelectedJob] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeTab, setActiveTab] = useState('original');
+    const [paramSubTab, setParamSubTab] = useState('before');
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+
+    const location = useLocation();
 
     useEffect(() => {
         const loadedJobs = getJobs('logic');
         setJobs(loadedJobs);
-    }, []);
+
+        // Check for navigation state
+        if (location.state?.jobId) {
+            const linkedJob = loadedJobs.find(job => job.id === location.state.jobId);
+            if (linkedJob) {
+                setSelectedJob(linkedJob);
+            }
+        }
+    }, [location.state]);
 
     const tabs = [
         { id: 'original', label: '원소스' },
-        { id: 'converted', label: '변환소스' }
+        { id: 'converted', label: '변환소스' },
+        { id: 'parameters', label: '파라미터' }
     ];
 
     const sampleOriginal = `-- Stored Procedure
@@ -47,6 +60,51 @@ public class OrderService {
         .stream()
         .map(OrderDto::from)
         .toList();
+    }
+}`;
+
+    const sampleParametersBefore = `{
+    "input": [
+        {
+            "name": "@user_id",
+            "type": "INT",
+            "required": true,
+            "description": "사용자 ID"
+        }
+    ],
+    "output": [
+        {
+            "name": "order_id",
+            "type": "INT",
+            "description": "주문 번호"
+        },
+        {
+            "name": "order_date",
+            "type": "DATETIME",
+            "description": "주문 일시"
+        },
+        {
+            "name": "total_amount",
+            "type": "DECIMAL",
+            "description": "총 주문 금액"
+        }
+    ]
+}`;
+
+    const sampleParametersAfter = `// Converted Java DTO
+@Getter @Setter
+@NoArgsConstructor
+public class UserOrderDto {
+    private Long orderId;
+    private LocalDateTime orderDate;
+    private BigDecimal totalAmount;
+    
+    // Request DTO
+    @Getter @Setter
+    @AllArgsConstructor
+    public static class Request {
+        @NotNull
+        private Long userId;
     }
 }`;
 
@@ -224,11 +282,39 @@ public class OrderService {
                 </div>
 
                 <div className="detail-panel">
-                    {selectedFile ? (
+                    {activeTab === 'parameters' && selectedFile ? (
+                        <div className="tab-content-wrapper">
+                            <div className="sub-tabs">
+                                <button
+                                    className={`sub-tab-btn ${paramSubTab === 'before' ? 'active' : ''}`}
+                                    onClick={() => setParamSubTab('before')}
+                                >
+                                    변경전
+                                </button>
+                                <button
+                                    className={`sub-tab-btn ${paramSubTab === 'after' ? 'active' : ''}`}
+                                    onClick={() => setParamSubTab('after')}
+                                >
+                                    변경후
+                                </button>
+                            </div>
+                            <div className="code-viewer">
+                                <pre className="code-content">
+                                    <code>
+                                        {paramSubTab === 'before' ? sampleParametersBefore : sampleParametersAfter}
+                                    </code>
+                                </pre>
+                            </div>
+                        </div>
+                    ) : selectedFile ? (
                         <div className="code-viewer">
                             <pre className="code-content">
                                 <code>
-                                    {activeTab === 'original' ? sampleOriginal : sampleConverted}
+                                    {activeTab === 'original'
+                                        ? sampleOriginal
+                                        : activeTab === 'converted'
+                                            ? sampleConverted
+                                            : ''}
                                 </code>
                             </pre>
                         </div>

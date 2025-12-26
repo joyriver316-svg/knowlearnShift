@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import '../java/Report.css';
 import '../java/Dashboard.css';
 import { getJobs } from '../../utils/jobStorage';
@@ -7,22 +8,34 @@ function Report() {
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [activeTab, setActiveTab] = useState('nexacro_screen');
+    const [activeTab, setActiveTab] = useState('preview');
+    const [isMockOn, setIsMockOn] = useState(true);
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+
+    const location = useLocation();
 
     useEffect(() => {
         const loadedJobs = getJobs('ui');
         setJobs(loadedJobs);
-    }, []);
+
+        // Check for navigation state
+        if (location.state?.jobId) {
+            const linkedJob = loadedJobs.find(job => job.id === location.state.jobId);
+            if (linkedJob) {
+                setSelectedJob(linkedJob);
+            }
+        }
+    }, [location.state]);
 
     const tabs = [
-        { id: 'nxfdl', label: 'NXFDL' },
-        { id: 'nxmls', label: 'NXMLs' },
+        { id: 'preview', label: 'PreView' },
         { id: 'document', label: 'Document' },
         { id: 'mock', label: 'Mock' },
         { id: 'api', label: 'API' },
-        { id: 'screen', label: 'Screen' }
+        { id: 'screen', label: 'Screen' },
+        { id: 'nxfdl', label: 'NXFDL' },
+        { id: 'nxmls', label: 'NXMLs' }
     ];
 
     const sampleNexacroScreen = `<!-- NXFDL Source -->
@@ -155,6 +168,66 @@ Menu > Sales > Customer Management`;
             );
         }
 
+        if (activeTab === 'preview') {
+            const previewData = [
+                { id: 'CUST001', name: 'John Doe', email: 'john@example.com', phone: '010-1234-5678' },
+                { id: 'CUST002', name: 'Jane Smith', email: 'jane@example.com', phone: '010-9876-5432' },
+                { id: 'CUST003', name: 'Alice Johnson', email: 'alice@company.com', phone: '010-5555-7777' }
+            ];
+
+            return (
+                <div className="preview-container" style={{ padding: '20px', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <h3 style={{ marginBottom: '20px', fontSize: '1.2rem', fontWeight: '600', color: '#1e293b' }}>Customer List Preview</h3>
+
+                    {/* Mock Search Area */}
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Search:</span>
+                            <input type="text" placeholder="Name or ID" style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.9rem' }} />
+                            <button style={{ padding: '6px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Search</button>
+                        </div>
+                    </div>
+
+                    {/* Mock Grid */}
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {previewData.map(cust => (
+                                <tr key={cust.id}>
+                                    <td>{cust.id}</td>
+                                    <td>{cust.name}</td>
+                                    <td>{cust.email}</td>
+                                    <td>{cust.phone}</td>
+                                    <td>
+                                        <button style={{ padding: '4px 8px', fontSize: '0.8rem', marginRight: '5px', background: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
+                                        <button style={{ padding: '4px 8px', fontSize: '0.8rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        if (activeTab === 'document') {
+            return (
+                <div className="code-viewer">
+                    <pre className="code-content" style={{ whiteSpace: 'pre-wrap', fontFamily: 'sans-serif' }}>
+                        {sampleOverview}
+                    </pre>
+                </div>
+            );
+        }
+
         if (activeTab === 'api') {
             return (
                 <div className="api-list-view">
@@ -182,21 +255,11 @@ Menu > Sales > Customer Management`;
             );
         }
 
-        if (activeTab === 'document') {
-            return (
-                <div className="code-viewer">
-                    <pre className="code-content" style={{ whiteSpace: 'pre-wrap', fontFamily: 'sans-serif' }}>
-                        {sampleOverview}
-                    </pre>
-                </div>
-            );
-        }
-
         let content = '';
-        if (activeTab === 'nxfdl') content = sampleNexacroScreen;
-        else if (activeTab === 'nxmls') content = sampleNexacroInterface;
-        else if (activeTab === 'mock') content = sampleMock;
+        if (activeTab === 'mock') content = sampleMock;
         else if (activeTab === 'screen') content = sampleParserInfo;
+        else if (activeTab === 'nxfdl') content = sampleNexacroScreen;
+        else if (activeTab === 'nxmls') content = sampleNexacroInterface;
 
         return (
             <div className="code-viewer">
@@ -272,12 +335,43 @@ Menu > Sales > Customer Management`;
                         </button>
                         <span className="job-name-small">{selectedJob.jobName}</span>
                     </div>
-                    <div className="report-tabs" style={{ marginLeft: '20px', alignSelf: 'flex-start', marginTop: '4px' }}>
+                    <div className="report-tabs" style={{ marginLeft: '12px', alignSelf: 'flex-start', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                            onClick={() => setIsMockOn(!isMockOn)}
+                            style={{
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                border: '1px solid',
+                                borderColor: isMockOn ? '#10b981' : '#cbd5e1',
+                                background: isMockOn ? '#ecfdf5' : '#f1f5f9',
+                                color: isMockOn ? '#059669' : '#64748b',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                height: '32px'
+                            }}
+                        >
+                            <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: isMockOn ? '#10b981' : '#94a3b8',
+                                display: 'inline-block'
+                            }}></span>
+                            {isMockOn ? 'Mock ON' : 'Mock OFF'}
+                        </button>
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                                 onClick={() => setActiveTab(tab.id)}
+                                style={{ padding: '6px 12px', whiteSpace: 'nowrap', fontSize: '0.85rem' }}
                             >
                                 {tab.label}
                             </button>

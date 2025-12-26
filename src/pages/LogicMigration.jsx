@@ -7,7 +7,7 @@ import LogicReport from './logic/Report';
 function LogicMigration() {
     return (
         <FeatureLayout
-            title="로직 마이그레이션"
+            title="SP 현대화"
             icon="refresh"
             basePath="/logic"
         >
