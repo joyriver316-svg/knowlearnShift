@@ -73,13 +73,3 @@
     min-width: 0;
     /* Critical for grid nested scrollbars/inputs */
 }
-
-@media (max-width: 480px) {
-    .settings-container {
-        grid-template-columns: 1fr;
-    }
-
-    .options-grid {
-        grid-template-columns: 1fr;
-    }
-}
